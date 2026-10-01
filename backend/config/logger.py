@@ -1,11 +1,18 @@
 import sys
+import os
 import logging
 from pathlib import Path
 
-if getattr(sys, 'frozen', False):
-    LOG_FILE = Path(sys.executable).parent / "log.txt"
-else:
-    LOG_FILE = Path(__file__).resolve().parent.parent.parent / "log.txt"
+def get_data_dir():
+    if getattr(sys, 'frozen', False):
+        app_data = os.getenv('APPDATA')
+        if app_data:
+            data_dir = Path(app_data) / "MultiPrint"
+            data_dir.mkdir(parents=True, exist_ok=True)
+            return data_dir
+    return Path(__file__).resolve().parent.parent.parent
+
+LOG_FILE = get_data_dir() / "log.txt"
 
 logging.basicConfig(
     level=logging.INFO,

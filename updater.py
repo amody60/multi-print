@@ -7,10 +7,9 @@ import sys
 import shutil
 from backend.config.logger import logger
 
-# ✅ ضع اسم المستخدم بتاعك واسم الريبو بتاعك هنا
 # ✅ تم تعديل الرابط باسمك
 GITHUB_REPO = "https://api.github.com/repos/amody60/multi-print/releases/latest"
-CURRENT_VERSION = "1.0.0" # كل ما تعمل ابديت، غير الرقم ده
+CURRENT_VERSION = "1.0.1" # تم التحديث
 
 def check_for_updates():
     try:

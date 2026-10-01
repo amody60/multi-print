@@ -1,10 +1,11 @@
 let filesQueue = [];
 let availablePrinters = [];
 let availableGroups = {};
-let groupMode = false;
-let draggedItemId = null;
+let groupMode = false; // ✅ تأكد إنها false
+let draggedItemId = null; 
 
 async function loadData() {
+    // 1. قراءة إعدادات الواجهة (اللغة والوضع الليلي)
     try {
         const resUI = await fetch('http://127.0.0.1:8000/api/settings/ui');
         const uiSettings = await resUI.json();
@@ -16,34 +17,38 @@ async function loadData() {
         }
     } catch (e) { console.error("Failed to load UI settings", e); }
 
+    // 2. قراءة الطابعات
     try {
         const resP = await fetch('http://127.0.0.1:8000/api/printers');
         if (!resP.ok) throw new Error('Server Error');
         availablePrinters = await resP.json();
-        
-        if (availablePrinters.length === 0) {
-            alert('لم يتم العثور على طابعات. تأكد من تشغيل البرنامج كمسؤول.');
-        }
-    } catch (e) {
-        alert('حدث خطأ في الاتصال بالباك-إند! تأكد من تشغيل البرنامج كمسؤول (Run as Administrator).');
-        console.error("Backend connection failed:", e);
+    } catch (e) { 
+        alert('حدث خطأ في الاتصال بالباك-إند!');
+        console.error("Backend connection failed:", e); 
     }
 
+    // 3. قراءة المجموعات
     try {
         const resG = await fetch('http://127.0.0.1:8000/api/groups');
         availableGroups = await resG.json();
     } catch (e) { console.error("Failed to load groups", e); }
     
-    updatePrinterDropdown();
-    applyTranslations();
-
+    // 4. فحص شاشة البداية (First Run Wizard)
     try {
         const resFR = await fetch('http://127.0.0.1:8000/api/settings/first_run');
         const frData = await resFR.json();
-        if (frData.first_run) {
+        if (frData.first_run && availablePrinters.length > 0) {
             openFirstRunWizard();
         }
     } catch (e) { console.error("First run check failed", e); }
+
+    // 5. تحديث الواجهة (بعد ما نتأكد إن كل البيانات اتجمعت من غير خطأ)
+    try {
+        updatePrinterDropdown();
+        applyTranslations();
+    } catch (e) {
+        console.error("UI Update failed:", e);
+    }
 }
 
 function openFirstRunWizard() {
@@ -70,10 +75,17 @@ async function saveFirstRun() {
     });
     
     document.getElementById('firstRunWizard').style.display = 'none';
-    document.getElementById('printerSelect').value = defaultP;
+    
+    // ✅ إجبار القائمة على إظهار الطابعات الفردية
+    groupMode = false; 
+    updatePrinterDropdown(); 
+    
+    // تحديد الطابعة الأساسية اللي إنت اخترتها
+    const select = document.getElementById('printerSelect');
+    select.value = defaultP;
+    
     alert('تم حفظ الإعدادات بنجاح!');
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     const dropZone = document.getElementById('dropZone');
     if(dropZone) {

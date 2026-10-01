@@ -1,19 +1,19 @@
 {
   "first_run_completed": true,
-  "default_printer": "XRX WC 7855 (1E0FAA)",
-  "fallback_printer": "XRX WC 7855 (1E0FAA)",
+  "default_printer": "Fake HP Printer",
+  "fallback_printer": "Fake Canon Printer",
   "paper_size": "A4",
+  "ui_settings": {
+    "lang": "en",
+    "dark_mode": true
+  },
   "printer_groups": {
-    "ink h1 h2": {
+    "124": {
       "printers": [
-        "HP 577 Ink H1",
-        "HP 556 Ink H2"
+        "Fake Xerox Printer",
+        "Fake HP Printer"
       ],
       "last_used_index": 0
     }
-  },
-  "ui_settings": {
-    "lang": "ar",
-    "dark_mode": true
   }
 }

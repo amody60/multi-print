@@ -1,6 +1,7 @@
 """File upload, conversion, and preview API endpoints."""
 
 import sys
+import os
 import time
 import uuid
 import base64
@@ -13,18 +14,21 @@ import fitz  # PyMuPDF
 
 from backend.convert.to_pdf import convert_document_to_pdf
 from backend.convert.image_to_pdf import convert_image_to_pdf
+from backend.config.logger import logger
 
 router = APIRouter(prefix="/api/files", tags=["files"])
 
-# تحديد مسار مجلد الرفع (temp_uploads) ليتوافق مع وضع التطوير ووضع الـ EXE
-if getattr(sys, 'frozen', False):
-    # وضع الـ EXE (PyInstaller)
-    ROOT_DIR = Path(sys.executable).parent
-else:
-    # وضع التطوير (Python عادي)
-    ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+def get_data_dir():
+    if getattr(sys, 'frozen', False):
+        app_data = os.getenv('APPDATA')
+        if app_data:
+            data_dir = Path(app_data) / "MultiPrint"
+            data_dir.mkdir(parents=True, exist_ok=True)
+            return data_dir
+    return Path(__file__).resolve().parent.parent.parent
 
-UPLOAD_DIR = ROOT_DIR / "temp_uploads"
+# ✅ حفظ الملفات المؤقتة في AppData عشان الويندوز ميرفضش الكتابة
+UPLOAD_DIR = get_data_dir() / "temp_uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 @router.post("/upload")
@@ -35,7 +39,6 @@ async def upload_file(file: UploadFile = File(...)):
     original_name = file.filename
     original_path = Path(original_name)
 
-    # نولّد بادئة فريدة عشان نمنع تصادم الأسماء لو اتكرر نفس اسم الملف
     unique_id = uuid.uuid4().hex[:8]
     disk_stem = f"{original_path.stem}_{unique_id}"
     disk_filename = f"{disk_stem}{original_path.suffix}"
@@ -58,12 +61,12 @@ async def upload_file(file: UploadFile = File(...)):
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported file format: {ext}")
             
-        # قراءة عدد الصفحات من الـ PDF
         doc = fitz.open(pdf_path)
         page_count = len(doc)
         doc.close()
         
     except Exception as e:
+        logger.error(f"Upload/Convert error: {e}")
         raise HTTPException(status_code=500, detail=f"Conversion failed: {str(e)}")
 
     return {
@@ -99,15 +102,12 @@ def preview_all_files(req: PreviewRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ✅ تم إصلاح المسار (Indentation) ليكون Route مستقل
 @router.delete("/cleanup")
 async def cleanup_files(files: List[str] = Body(...)):
-    """Deletes uploaded files from the server to free up space."""
     deleted = 0
     for file_path in files:
         try:
             target = Path(file_path).resolve()
-            # تأكد إن الملف جوه مجلد الـ temp_uploads بس عشان الأمان
             if UPLOAD_DIR in target.parents:
                 if target.exists():
                     target.unlink()
