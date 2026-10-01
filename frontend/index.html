@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi Print</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- First Run Wizard Modal -->
+    <div class="preview-fullscreen" id="firstRunWizard" style="background: rgba(0,0,0,0.7);">
+        <div style="background: var(--card-bg); padding: 40px; border-radius: 16px; width: 450px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <h2 style="color: var(--primary); margin-bottom: 10px;">أهلاً بك في Multi Print 👋</h2>
+            <p style="color: var(--text-muted); margin-bottom: 30px;">لنبدأ بإعداد الطابعة الأساسية والاحتياطية لتسهيل العمل عليك.</p>
+            
+            <div style="text-align: right; margin-bottom: 20px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">الطابعة الأساسية:</label>
+                <select id="wizardDefaultPrinter" style="width: 100%; padding: 10px;"></select>
+            </div>
+            <div style="text-align: right; margin-bottom: 20px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">الطابعة الاحتياطية:</label>
+                <select id="wizardFallbackPrinter" style="width: 100%; padding: 10px;"></select>
+            </div>
+            <div style="text-align: right; margin-bottom: 30px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">مقاس الورق الافتراضي:</label>
+                <select id="wizardPaperSize" style="width: 100%; padding: 10px;">
+                    <option value="A4">A4 (عادي)</option>
+                    <option value="A3">A3 (كبير)</option>
+                    <option value="Letter">Letter</option>
+                </select>
+            </div>
+            <button class="btn btn-success" onclick="saveFirstRun()" style="width: 100%; padding: 12px; font-size: 16px;">حفظ والبدء</button>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <h2>Multi Print</h2>
+        <div class="nav-item active" id="nav-home" onclick="showScreen('home')" data-i18n="home">الرئيسية (واجهه الطباعة)</div>
+        <div class="nav-item" id="nav-groups" onclick="showScreen('groups')" data-i18n="groups">إدارة المجموعات</div>
+        <div class="nav-item" id="nav-history" onclick="showScreen('history')" data-i18n="history">سجل الطباعة</div>
+        <div class="nav-item" id="nav-settings" onclick="showScreen('settings')" data-i18n="settings">الإعدادات</div>
+        
+        <div class="sidebar-bottom">
+            <button class="icon-btn" onclick="toggleDarkMode()">🌙 / ☀️</button>
+            <button class="icon-btn" onclick="toggleLang()">AR / EN</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- الشاشة الرئيسية -->
+        <div id="homeScreen" class="screen-container active">
+            <div class="header">
+                <h1 data-i18n="queue_title">الواجهه الرئيسية للطباعة</h1>
+                <button class="btn btn-danger" onclick="clearQueue()" data-i18n="clear_all">مسح الكل</button>
+            </div>
+            
+            <div class="content">
+                <div class="drop-zone" id="dropZone" data-i18n="drop_text">
+                    <h3>اسحب وأفلت الملفات هنا</h3>
+                    <p>أو اضغط للاختيار (PDF, DOCX, PPTX, JPG, PNG)</p>
+                    <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFiles(this.files)">
+                </div>
+                <div class="queue-list" id="queueList"></div>
+                <div id="reportContainer"></div>
+            </div>
+
+            <div class="print-bar">
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label data-i18n="destination">وجهة الطباعة</label>
+                        <select id="printerSelect" style="width: 200px;"><option>...</option></select>
+                    </div>
+                    <div class="setting-item">
+                        <label data-i18n="orientation">اتجاه الورق</label>
+                        <select id="orientationSelect">
+                            <option value="portrait" data-i18n="portrait">طولي (Portrait)</option>
+                            <option value="landscape" data-i18n="landscape">عرضي (Landscape)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label data-i18n="nup">السلايدات (N-up)</label>
+                        <select id="nupSelect"><option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option></select>
+                    </div>
+                    <div class="setting-item">
+                        <label data-i18n="sides">الوجه</label>
+                        <select id="duplexSelect"><option value="false" data-i18n="simplex">وش بس</option><option value="true" data-i18n="duplex">وش وضهر</option></select>
+                    </div>
+                    <div class="setting-item">
+                        <label data-i18n="color">الألوان</label>
+                        <select id="colorSelect"><option value="true" data-i18n="colored">ألوان</option><option value="false" data-i18n="bw">أبيض وأسود</option></select>
+                    </div>
+                    <div class="setting-item">
+                        <label data-i18n="copies">النسخ</label>
+                        <input type="number" id="copiesInput" min="1" value="1" style="width: 60px;">
+                    </div>
+                    <div class="setting-item">
+                        <label data-i18n="group_mode">وضع المجموعات</label>
+                        <button class="btn btn-success" id="groupToggleBtn" onclick="toggleGroupMode()" style="padding: 8px;" data-i18n="enable_groups">تفعيل المجموعات</button>
+                    </div>
+                </div>
+                <button class="btn" onclick="preparePrintAll()" style="padding: 12px 30px; font-size: 16px;" data-i18n="preview_print">معاينة وطباعة الكل</button>
+            </div>
+        </div>
+
+        <!-- شاشة إدارة المجموعات -->
+        <div id="groupsScreen" class="screen-container">
+            <div class="header">
+                <h1 data-i18n="groups_title">إدارة المجموعات</h1>
+                <button class="btn btn-danger" onclick="showScreen('home')" data-i18n="back_home">رجوع للرئيسية</button>
+            </div>
+            <div class="content">
+                <div class="group-card">
+                    <h3 id="groupFormTitle" data-i18n="new_group">إنشاء مجموعة جديدة</h3><br>
+                    <input type="text" id="newGroupName" placeholder="..." style="width: 100%; margin-bottom: 15px;" data-i18n-ph="group_name_ph">
+                    <h4 data-i18n="select_printers">اختر الطابعات:</h4><br>
+                    <div id="printersCheckboxes"></div><br>
+                    <button class="btn btn-success" id="saveGroupBtn" onclick="saveGroup()" data-i18n="save_group">حفظ المجموعة</button>
+                </div>
+                <div class="group-card">
+                    <h3 data-i18n="existing_groups">المجموعات الحالية</h3><br>
+                    <div id="savedGroupsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- شاشة سجل الطباعة -->
+        <div id="historyScreen" class="screen-container">
+            <div class="header">
+                <h1 data-i18n="history_title">سجل الطباعة</h1>
+                <button class="btn btn-danger" onclick="showScreen('home')" data-i18n="back_home">رجوع للرئيسية</button>
+            </div>
+            <div class="content">
+                <div class="group-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-i18n="tb_date">التاريخ</th>
+                                <th data-i18n="tb_file">اسم الملف</th>
+                                <th data-i18n="tb_printer">الطابعة</th>
+                                <th data-i18n="tb_pages">الصفحات</th>
+                                <th data-i18n="tb_sheets">الأوراق</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- شاشة الإعدادات -->
+        <div id="settingsScreen" class="screen-container">
+            <div class="header">
+                <h1 data-i18n="settings_title">إعدادات الطابعات</h1>
+                <button class="btn btn-danger" onclick="showScreen('home')" data-i18n="back_home">رجوع للرئيسية</button>
+            </div>
+            <div class="content">
+                <div class="group-card">
+                    <h3 data-i18n="printer_props">تعديل خصائص الطابعات</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;" data-i18n="printer_props_desc">إذا كان البرنامج يقرأ أن الطابعة لا تدعم الوجهين بالخطأ، يمكنك تعديلها هنا.</p>
+                    <div id="settingsPrintersList" style="display: flex; flex-direction: column; gap: 15px;"></div><br>
+                    <button class="btn btn-success" onclick="savePrinterSettings()" style="margin-top: 10px;" data-i18n="save_settings">حفظ الإعدادات</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Screen Preview -->
+    <div class="preview-fullscreen" id="previewFullscreen">
+        <div class="preview-header">
+            <h3 data-i18n="preview_all">معاينة شاملة لجميع الملفات</h3>
+            <div style="display:flex; gap:10px;">
+                <button class="btn" id="executePrintBtn" onclick="executePrint()" data-i18n="print_now">✅ طباعة الآن</button>
+                <button class="btn btn-danger" onclick="closePreview()" data-i18n="close">إغلاق</button>
+            </div>
+        </div>
+        
+        <!-- الـ Progress Bar -->
+        <div style="padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border); display: none;" id="printProgressContainer">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span id="printProgressText" style="font-size: 14px; font-weight: bold; color: var(--primary);">جاري التحضير...</span>
+                <span id="printProgressCount" style="font-size: 12px; color: var(--text-muted);">0 / 0</span>
+            </div>
+            <div style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+                <div id="printProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+            </div>
+        </div>
+
+        <div class="preview-body" id="previewImageContainer"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/i18n.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/queue.js"></script>
+    <script src="js/print.js"></script>
+    <script src="js/screens.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

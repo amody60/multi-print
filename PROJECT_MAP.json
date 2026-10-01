@@ -1,0 +1,104 @@
+{
+  "last_updated": "2024-05-23",
+  "protocol_version": "3.2.0",
+  "project_summary": "تطبيق ديسكتوب احترافي (Multi Print) للطباعة الدفعية المتقدمة. يدعم تحويل وجمع ملفات متعددة، طباعة بمجموعات (Round-Robin)، نظام High Availability (Failover للطابعة الاحتياطية)، تتبع التقدم (Progress Bar) مع إظهار الطابعة الفعالة، سجل طباعة، واجهة قابلة للترجمة والوضع الليلي، مع نظام Logging متكامل، بنية واجهة مفككة (Modular)، و Unit Tests شاملة.",
+  "tech_stack": {
+    "backend": "Python, FastAPI, PyMuPDF (fitz), pywin32, pywebview, PIL (Pillow), logging, uuid",
+    "frontend": "HTML, CSS, Vanilla JavaScript (Modular Architecture: split into 6 files)",
+    "external_tools": "SumatraPDF.exe (للطباعة الصامتة), LibreOffice Portable (لتحويل الوورد والباوربوينت)",
+    "testing": "pytest, httpx, pytest-asyncio"
+  },
+  "architecture": {
+    "entry_point": "backend/main.py (يشغل FastAPI في Thread منفصل ويفتح نافذة pywebview)",
+    "backend_modules": {
+      "api/printers.py": "Endpoints لاكتشاف الطابعات، إدارة المجموعات، إعدادات الطابعات، وإعدادات الواجهة (UI Settings)",
+      "api/files.py": "Endpoints لرفع الملفات (مع منع تصادم الأسماء عبر UUID)، تحويلها لـ PDF، دمجها لمعاينة شاملة (Base64)، وتنظيف الملفات المؤقتة (Cleanup)",
+      "api/print_jobs.py": "Endpoint لتنفيذ الطباعة (استخراج نطاق الصفحات، N-up، اتجاه الورق، فحص طابور الويندوز، Failover للطابعة الاحتياطية، إرجاع أخطاء دقيقة، وحفظ السجل)",
+      "api/history.py": "Endpoint لجلب سجل الطباعة",
+      "printers/discovery.py": "استخدام win32print لاكتشاف الطابعات الحقيقية وفلترة الوهمية ومعرفة دعم Duplex",
+      "printers/groups.py": "منطق حفظ المجموعات وتوزيع الأعباء (Round-Robin)",
+      "printers/print_queue.py": "تشغيل SumatraPDF بصمت مع خصائص الـ Duplex والألوان، حساب Timeout ديناميكي حسب حجم الملف، وإرجاع أخطاء واضحة",
+      "convert/to_pdf.py": "تحويل Word/PPT لـ PDF عبر LibreOffice headless (يدعم المسار Portable بجوار الـ exe)",
+      "convert/image_to_pdf.py": "تحويل الصور لـ PDF عبر Pillow",
+      "compose/n_up.py": "تركيب صفحات الـ PDF (حتى 10 صفحات) في ورقة واحدة عبر PyMuPDF",
+      "config/settings_store.py": "قراءة وكتابة إعدادات الطابعات والواجهة و First Run في settings.json",
+      "config/history_store.py": "تخزين وقراءة سجل الطباعة في history.json",
+      "config/logger.py": "نظام تسجيل أخطاء وعمليات (Logging) في log.txt"
+    },
+    "frontend_modules": {
+      "index.html": "هيكل الواجهة الرئيسي (مفصول عن التنسيق والمنطق)",
+      "css/style.css": "كل أكواد التنسيق والـ Dark Mode",
+      "js/i18n.js": "قاموس الترجمة (عربي/إنجليزي) ودالة تغيير اللغة",
+      "js/ui.js": "دوال التحكم في الواجهة (الوضع الليلي، التنقل بين الشاشات، حفظ الإعدادات)",
+      "js/queue.js": "دوال السحب والإفلات، رفع الملفات، وتحديد نطاق الصفحات لكل ملف",
+      "js/print.js": "دوال المعاينة الشاملة، تنفيذ الطباعة، الـ Progress Bar (مع إظهار اسم الطابعة الفعالة)، والتقارير",
+      "js/screens.js": "دوال إدارة المجموعات، الإعدادات، وسجل الطباعة داخل الواجهة",
+      "js/main.js": "المتغيرات الأساسية، تحميل البيانات الأولى، والـ First Run Wizard",
+      "features": [
+        "First Run Wizard لاختيار الطابعة الأساسية والاحتياطية",
+        "High Availability (Failover): الانتقال التلقائي للطابعة الاحتياطية إذا فشلت الأساسية",
+        "إظهار اسم الطابعة الفعالة في الـ Progress Bar أثناء الطباعة",
+        "منع تصادم أسماء الملفات المرفوعة باستخدام UUID",
+        "السحب والإفلات للملفات وإعادة ترتيبها (Drag & Drop)",
+        "تحديد نطاق الصفحات لكل ملف (All / Custom مثل 1-3, 5)",
+        "معاينة شاملة لكل الملفات مدمجة كصور Base64",
+        "تقرير طباعة دقيق يوضح الأوراق الموفرة والطابعات المستخدمة والأخطاء",
+        "تفعيل الوضع الليلي (Dark Mode) وتغيير اللغة (AR/EN) مع الحفظ في الباك-إند",
+        "تشغيل LibreOffice كنسخة Portable بجوار ملف الـ exe"
+      ]
+    },
+    "tests": {
+      "path": "tests/test_core.py",
+      "framework": "pytest",
+      "coverage": "API endpoints, Round-Robin logic, Custom Page Range extraction, HTTP Error handling (400/404), File name collision prevention (UUID)"
+    },
+    "build": {
+      "spec_file": "build.spec",
+      "output": "dist/MultiPrint.exe",
+      "notes": "LibreOffice Portable يجب وضعه كفولدر اسمه 'libreoffice' بجوار ملف الـ exe"
+    }
+  },
+  "completed_tasks_recent": [
+    { "id": "T-01", "title": "Setup & Printer Discovery", "status": "PASS" },
+    { "id": "T-02", "title": "File Conversion Layer (LibreOffice + Pillow)", "status": "PASS" },
+    { "id": "T-03", "title": "N-up Composition & Fit-to-page", "status": "PASS" },
+    { "id": "T-04", "title": "Print Execution via SumatraPDF (Silent & Dynamic Timeout)", "status": "PASS" },
+    { "id": "T-05", "title": "Printer Groups & Round-Robin", "status": "PASS" },
+    { "id": "T-06", "title": "Desktop Window (pywebview) & Base UI", "status": "PASS" },
+    { "id": "T-07", "title": "Custom Page Ranges & Drag/Drop Reordering", "status": "PASS" },
+    { "id": "T-08", "title": "Print History Log & Cost/Sheets Report", "status": "PASS" },
+    { "id": "T-09", "title": "Dark Mode, Language Toggle, UI Settings Persistence (Backend)", "status": "PASS" },
+    { "id": "T-10", "title": "First Run Wizard Implementation", "status": "PASS" },
+    { "id": "T-11", "title": "Smart Printer Queue Check & Dynamic Timeout", "status": "PASS" },
+    { "id": "T-12", "title": "Logging System (log.txt) & Detailed User Error Messages", "status": "PASS" },
+    { "id": "T-13", "title": "Progress Bar for Batch Printing & Sheet Counting", "status": "PASS" },
+    { "id": "T-14", "title": "Auto-Cleanup of Temporary Derived PDFs", "status": "PASS" },
+    { "id": "T-15", "title": "Unit Tests Setup (pytest) & Absolute Imports Fix", "status": "PASS" },
+    { "id": "T-16", "title": "Frontend Separation (HTML, CSS, JS)", "status": "PASS" },
+    { "id": "T-17", "title": "UUID File Collision Prevention & Cleanup Route Fix", "status": "PASS" },
+    { "id": "T-18", "title": "Expanded Unit Tests (Edge Cases: 400/404 Errors, UUID)", "status": "PASS" },
+    { "id": "T-19", "title": "Frontend Modular Architecture (Split app.js into 6 files)", "status": "PASS" },
+    { "id": "T-20", "title": "PyInstaller Build Fix (MEIPASS paths for EXE)", "status": "PASS" },
+    { "id": "T-21", "title": "High Availability (Printer Failover) & UI Progress Update", "status": "PASS" }
+  ],
+  "risk_register": [
+    {
+      "id": "R-01",
+      "description": "SumatraPDF may fail if printer is Offline. System now automatically fails over to the fallback printer.",
+      "severity": "Low",
+      "status": "Mitigated"
+    },
+    {
+      "id": "R-02",
+      "description": "LibreOffice Portable folder must be placed next to MultiPrint.exe for DOCX/PPTX conversion to work on other machines.",
+      "severity": "Medium",
+      "status": "Open"
+    },
+    {
+      "id": "R-03",
+      "description": "PyInstaller might miss pywebview hidden imports. Handled in build.spec.",
+      "severity": "Low",
+      "status": "Mitigated"
+    }
+  ]
+}

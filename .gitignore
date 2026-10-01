@@ -1,0 +1,9 @@
+clean_env/
+libreoffice/
+LibreOfficePortable/
+build/
+dist/
+temp_uploads/
+log.txt
+__pycache__/
+*.pyc
