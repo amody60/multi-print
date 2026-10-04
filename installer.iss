@@ -2,7 +2,7 @@
 
 [Setup]
 AppName=Multi Print
-AppVersion=1.0.3
+AppVersion=1.0.4
 AppPublisher=Multi Print Co.
 DefaultDirName={pf}\MultiPrint
 DefaultGroupName=Multi Print
@@ -26,8 +26,8 @@ Name: "desktopicon"; Description: "Create a desktop icon"; GroupDescription: "Ad
 
 [Files]
 ; بنضع كل ملفات البرنامج من فولدر النسخة الجديد
-Source: "dist\1.0.3\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; ✅ بنضع مجلد LibreOffice من المسار الرئيسي للمشروع
+Source: "dist\1.0.4\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; بنضع مجلد LibreOffice من المسار الرئيسي للمشروع
 Source: "libreoffice\*"; DestDir: "{app}\libreoffice"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
