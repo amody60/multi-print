@@ -9,7 +9,7 @@ from backend.config.logger import logger
 
 # ✅ تم تعديل الرابط باسمك
 GITHUB_REPO = "https://api.github.com/repos/amody60/multi-print/releases/latest"
-CURRENT_VERSION = "1.0.1" # تم التحديث
+CURRENT_VERSION = "1.0.3" # غيرها كل ما تعمل Build جديد
 
 def check_for_updates():
     try:
@@ -23,8 +23,9 @@ def check_for_updates():
         if not download_url:
             return
 
-        if latest_version > CURRENT_VERSION:
-            logger.info(f"New version found: {latest_version}")
+        # تحويل النصوص لأرقام للمقارنة الصح
+        def v_tuple(v): return tuple(map(int, v.split(".")))
+        if v_tuple(latest_version) > v_tuple(CURRENT_VERSION):
             # رسالة ويندوز تطلب من المستخدم الموافقة على التحديث
             result = ctypes.windll.user32.MessageBoxW(0, f"يتوفر إصدار جديد ({latest_version}).\nهل تريد تحديث البرنامج الآن؟", "تحديث Multi Print", 4 | 64)
             if result == 6: # 6 يعني المستخدم داس Yes

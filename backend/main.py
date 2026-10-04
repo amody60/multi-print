@@ -49,7 +49,25 @@ app.include_router(print_router)
 app.include_router(history_router)
 
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
-app.mount("/files", StaticFiles(directory=UPLOAD_DIR), name="files")
+import sys
+import os
+from pathlib import Path
+
+# تحديد مسار AppData للمستخدم الحالي
+if getattr(sys, 'frozen', False):
+    app_data = os.getenv('APPDATA')
+    if app_data:
+        SAFE_UPLOAD_DIR = Path(app_data) / "MultiPrint" / "temp_uploads"
+    else:
+        SAFE_UPLOAD_DIR = Path(sys.executable).parent / "temp_uploads"
+else:
+    SAFE_UPLOAD_DIR = Path(__file__).resolve().parent.parent / "temp_uploads"
+
+# التأكد من إنشاء المجلد
+SAFE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+# ربط المجلد بالسيرفر
+app.mount("/files", StaticFiles(directory=SAFE_UPLOAD_DIR), name="files")
 
 def start_server():
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")

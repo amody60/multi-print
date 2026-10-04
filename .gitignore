@@ -7,3 +7,4 @@ temp_uploads/
 log.txt
 __pycache__/
 *.pyc
+installer_output/
