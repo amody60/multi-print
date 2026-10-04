@@ -7,7 +7,7 @@ block_cipher = None
 ROOT_DIR = os.path.abspath('.')
 
 # ✅ رقم النسخة (غيره كل مرة تعمل ابديت)
-APP_VERSION = "1.0.3"
+APP_VERSION = "1.0.4"
 
 hiddenimports = [
     'win32print',

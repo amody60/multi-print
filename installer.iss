@@ -15,7 +15,7 @@ ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 DisableProgramGroupPage=yes
 WizardStyle=modern
-SetupIconFile=app_icon.ico  # ✅ إضافة الأيقونة هنا
+SetupIconFile=app_icon.ico
 
 [Languages]
 Name: "arabic"; MessagesFile: "compiler:Languages\Arabic.isl"

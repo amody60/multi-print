@@ -7,9 +7,9 @@ import sys
 import shutil
 from backend.config.logger import logger
 
-# ✅ تم تعديل الرابط باسمك
+# ✅ ضع اسم المستخدم بتاعك واسم الريبو بتاعك هنا
 GITHUB_REPO = "https://api.github.com/repos/amody60/multi-print/releases/latest"
-CURRENT_VERSION = "1.0.3" # غيرها كل ما تعمل Build جديد
+CURRENT_VERSION = "1.0.4" # كل ما تعمل ابديت، غير الرقم ده
 
 def check_for_updates():
     try:
@@ -23,12 +23,19 @@ def check_for_updates():
         if not download_url:
             return
 
-        # تحويل النصوص لأرقام للمقارنة الصح
+        # ✅ تحويل النصوص لأرقام للمقارنة الصح
         def v_tuple(v): return tuple(map(int, v.split(".")))
         if v_tuple(latest_version) > v_tuple(CURRENT_VERSION):
+            logger.info(f"New version found: {latest_version}")
             # رسالة ويندوز تطلب من المستخدم الموافقة على التحديث
-            result = ctypes.windll.user32.MessageBoxW(0, f"يتوفر إصدار جديد ({latest_version}).\nهل تريد تحديث البرنامج الآن؟", "تحديث Multi Print", 4 | 64)
-            if result == 6: # 6 يعني المستخدم داس Yes
+        # ✅ جلب الأيقونة من البرنامج نفسه لعرضها في رسالة التحديث
+        if getattr(sys, 'frozen', False):
+            hwnd = 0
+            hicon = ctypes.windll.shell32.ExtractIconW(0, sys.executable, 0)
+            if hicon:
+                ctypes.windll.user32.SendMessageW(hwnd, 0x0080, 1, hicon)
+
+        result = ctypes.windll.user32.MessageBoxW(0, f"يتوفر إصدار جديد ({latest_version}).\nهل تريد تحديث البرنامج الآن؟ سيتم إغلاق البرنامج وإعادة تشغيله تلقائياً.", "تحديث Multi Print", 4 | 64)            if result == 6: # 6 يعني المستخدم داس Yes
                 download_and_install_update(download_url)
     except Exception as e:
         logger.error(f"Update check failed: {e}")
@@ -52,20 +59,26 @@ def download_and_install_update(url):
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extract_folder)
 
-        # إنشاء سكريبت باتش عشان يغلق البرنامج وينسخ الملفات ويعيد التشغيل
-        bat_content = f"""@echo off
-timeout /t 2 /nobreak >nul
-taskkill /f /im MultiPrint.exe
-xcopy /s /y "{extract_folder}\\*" ".\\"
-start "" "MultiPrint.exe"
-del "update.bat"
-"""
-        with open("update.bat", "w") as f:
-            f.write(bat_content)
+        # ✅ البحث عن ملف Setup.exe (بأي اسم) داخل الملفات اللي اتنزلت
+        setup_exe = None
+        for root, dirs, files in os.walk(extract_folder):
+            for file in files:
+                if file.lower().endswith("setup.exe"):
+                    setup_exe = os.path.join(root, file)
+                    break
+            if setup_exe:
+                break
 
-        # تشغيل سكريبت الباتش في الخلفية
-        subprocess.Popen(["cmd", "/c", "update.bat"], creationflags=subprocess.CREATE_NO_WINDOW)
-        sys.exit(0) # إغلاق البرنامج الحالي عشان الباتش يقدر يكمل شغله
+        if not setup_exe:
+            raise RuntimeError("Setup.exe not found in update package.")
+
+        # ✅ تشغيل ملف الـ Setup في الوضع الصامت (Silent Mode)
+        # /VERYSILENT بيخليه يتسطب من غير واجهة، /NORESTART يمنع الويندوز يعمل ريستارت
+        # /CLOSEAPPLICATIONS بيقفل أي نسخة قديمة شغالة، /NOCANCEL يمنع الإلغاء
+        subprocess.Popen([setup_exe, "/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS", "/NOCANCEL"])
+        
+        # ✅ إغلاق البرنامج الحالي فوراً عشان الـ Setup يقدر يكمل ويفتح النسخة الجديدة
+        sys.exit(0)
 
     except Exception as e:
         logger.error(f"Update installation failed: {e}")
